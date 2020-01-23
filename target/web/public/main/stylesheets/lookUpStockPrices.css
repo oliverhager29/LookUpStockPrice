@@ -1,0 +1,40 @@
+.Heading {
+    font-size: x-large;
+    padding-bottom: 1em;
+}
+
+.ErrorMessage {
+    font-size: large;
+    color: red;
+    padding-bottom: 1em;
+}
+
+.InputLabel {
+    horiz-align: left;
+    padding-bottom: 1em;
+}
+
+.InputField {
+    horiz-align: left;
+}
+
+.AddButton {
+    horiz-align: left;
+}
+
+.DeleteButton {
+    padding-left: 5em;
+}
+
+.DataField {
+    float: left;
+    width: 20em;
+}
+
+.List {
+    padding-top: 2em;
+}
+
+.List li {
+    padding-top: 1em;
+}

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<meta charset="utf-8" />
+<title>Lookup Stock Prices</title>
+<link rel="stylesheet" media="screen" href="@routes.Assets.versioned("stylesheets/lookUpStockPrices.css")">
+<script language="javascript" type="text/javascript">
+
+  var wsUri = "ws://localhost:9000/socket";
+
+  function createOnOpenHandler(webSocket, stock) {
+      return (evt) => {
+          onOpen(webSocket, evt, stock);
+      }
+  }
+
+  function createOnMessageHandler(webSocket) {
+      return (evt) => {
+          onMessage(webSocket, evt);
+      }
+  }
+
+  function sendToWebSocket(stock)
+  {
+      const webSocket = new WebSocket(wsUri);
+      webSocket.onopen = createOnOpenHandler(webSocket, stock);
+      webSocket.onclose = function(evt) { onClose(evt) };
+      webSocket.onmessage = createOnMessageHandler(webSocket);
+      webSocket.onerror = function(evt) { onError(evt) };
+  }
+
+  function onOpen(webSocket, evt, stock)
+  {
+      console.log("Web socket opened");
+      doSend(webSocket, stock);
+  }
+
+  function onClose(evt)
+  {
+      console.log("Web socket closed");
+  }
+
+  function onMessage(webSocket, evt)
+  {
+      console.log("Receiving message:"+evt.data);
+      const pos = evt.data.indexOf("#");
+      if(pos>=0) {
+          const stock = evt.data.substr(0, pos);
+          const price = evt.data.substr(pos + 1);
+          if(price==="invalid") {
+              const priceStr = "unknown stock";
+              document.getElementById("StockPriceFor" + stock).innerText = priceStr;
+              priceForStock[stock] = priceStr;
+          }
+          else {
+              const priceStr = "$" + price;
+              document.getElementById("StockPriceFor" + stock).innerText = priceStr;
+              priceForStock[stock] = priceStr;
+          }
+      }
+      webSocket.close();
+  }
+
+  function onError(evt)
+  {
+      console.log("Receiving error:"+evt.data);
+      document.getElementById("ErrorMessage").innerHTML = '<span>Error: ' + evt.data + '</span>';
+  }
+
+  function doSend(webSocket, message)
+  {
+      console.log("Sending message:"+message);
+      webSocket.send(message);
+  }
+
+  let stocks=[];
+  let stockField="";
+  let priceForStock={};
+  function handleStockFieldChange() {
+     stockField = document.getElementById("StockField").value;
+  }
+
+  function removeStock(stock) {
+    stocks = stocks.filter(s => s!==stock);
+    refreshStockList();
+  }
+
+  function handleAdd() {
+     if(!stocks.find(s => s===stockField)) {
+         stocks.push(stockField);
+         refreshStockList();
+         sendToWebSocket(stockField);
+         document.getElementById("StockField").value = "";
+     }
+  }
+
+  function refreshStockList() {
+      stocks.sort();
+      const stocksElement = document.getElementById("stocks");
+      let listHtml="<ul>Stocks:";
+      stocks.forEach(s => {
+          listHtml+=`<li><span><span class="DataField">${s}&nbsp;(<span id="StockPriceFor${s}">${priceForStock[s]?priceForStock[s]:"loading ..."}</span>)</span><span class="DeleteButton"><button type="button" name="delete" value="delete" onClick="removeStock('${s}');">Delete</Button></span></span></li>`;
+      });
+      listHtml+="</ul>";
+      if(stocks.length===0) {
+          listHtml+='<div>--- None yet added ---</div>';
+      }
+      stocksElement.innerHTML = listHtml;
+  }
+
+  setInterval(function(){
+      stocks.forEach(s => sendToWebSocket(s) );
+  }, 30000);
+
+  window.addEventListener("load", init, false);
+
+  </script>
+
+<div class="Heading">Lookup Stock Prices</div>
+<div>
+    <div>
+        <div class="ErrorMessage" id="errorMessage"></div>
+        <form>
+            <div class="InputLabel">
+                <label>Enter stock symbol:</label>
+            </div>
+            <div>
+                <span class="InputField">
+                    <input id="StockField" type="text" minlength="20" maxlength="20" name="stock" value="" onChange="handleStockFieldChange();"/>
+                </span>
+                <span class="AddButton">
+                    <button type="button" name="add" value="add" onClick="handleAdd();">Add</button>
+                </span>
+            </div>
+            <div class="List" id="stocks"><ul>Stocks:</ul><div>--- None yet added ---</div></div>
+        </form>
+    </div>
+</div>
